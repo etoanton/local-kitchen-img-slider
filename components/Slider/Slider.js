@@ -10,6 +10,13 @@ const getCategories = items => {
   return Object.keys(uniqueCategories);
 };
 
+const flatListConfig = {
+  horizontal: true,
+  pagingEnabled: true,
+  initialNumToRender: 3,
+  showsHorizontalScrollIndicator: false,
+};
+
 const Slider = ({ menuItems }) => {
   const availableCategories = getCategories(menuItems);
 
@@ -24,33 +31,36 @@ const Slider = ({ menuItems }) => {
     setVisibleImageIndex(pageNum);
   }, [visibleImageIndex]);
 
-  // const onScroll = e => {
-  //   const { contentOffset } = e.nativeEvent;
-  //   const viewSize = e.nativeEvent.layoutMeasurement;
-  //   const maxWidth = viewSize.width * (menuItems.length - 1);
+  const onScroll = e => {
+    const { contentOffset } = e.nativeEvent;
+    const viewSize = e.nativeEvent.layoutMeasurement;
+    const maxWidth = viewSize.width * (menuItems.length - 1);
 
-  //   if (contentOffset.x > maxWidth) {
-  //     sliderRef.current.scrollTo({ x: 0, animated: false });
-  //   }
+    if (contentOffset.x > maxWidth) {
+      sliderRef.current.scrollToIndex({ index: 0, animated: false });
+    }
 
-  //   if (contentOffset.x < 0) {
-  //     sliderRef.current.scrollTo({ x: maxWidth, animated: false });
-  //   }
-  // };
+    if (contentOffset.x < 0) {
+      sliderRef.current.scrollToIndex({ index: menuItems.length - 1, animated: false });
+    }
+  };
 
   useEffect(() => {
     if (selectedCategory !== menuItems[visibleImageIndex].category) {
       setCategory(menuItems[visibleImageIndex].category);
     }
-  }, [menuItems, visibleImageIndex, selectedCategory])
+  }, [menuItems, visibleImageIndex])
 
   const handleCategoryChange = nextCategory => {
-    setCategory(nextCategory);
     const idx = menuItems.findIndex(({ category }) => category === nextCategory);
     if (idx !== -1) {
-      sliderRef.current.scrollToIndex({ animated: false, index: idx })
+      sliderRef.current.scrollToIndex({ index: idx, animated: false, });
+      setVisibleImageIndex(idx);
+      setCategory(nextCategory);
     }
   };
+
+  console.log('selectedCategory', selectedCategory);
 
   const { color } = menuItems[visibleImageIndex];
 
@@ -71,11 +81,9 @@ const Slider = ({ menuItems }) => {
           keyExtractor={item => item.id}
           ref={sliderRef}
           style={styles.imageSliderContainer}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          // onScroll={onScroll}
+          onScroll={onScroll}
           onMomentumScrollEnd={onMomentumScrollEnd}
+          {...flatListConfig}
         />
       </View>
       <View style={styles.progressContainer}>

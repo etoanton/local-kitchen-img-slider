@@ -2,11 +2,11 @@ import React from 'react';
 
 import { StyleSheet, View } from 'react-native';
 
-const Progress = ({ menuItems, selectedCategory, visibleImageIndex }) => {
+const Progress = ({ menuItems, selectedCategory, currentPage }) => {
   const offset = menuItems.findIndex(({ category }) => category === selectedCategory);
   const categoryItems = menuItems.slice(offset).filter(({ category }) => category === selectedCategory);
 
-  const activeIdx = visibleImageIndex - offset;
+  const activeIdx = currentPage - offset;
 
   return (
     <View style={styles.container}>

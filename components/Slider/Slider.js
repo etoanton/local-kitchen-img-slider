@@ -15,6 +15,7 @@ const flatListConfig = {
   pagingEnabled: true,
   initialNumToRender: 3,
   showsHorizontalScrollIndicator: false,
+  initialScrollIndex: 0,
 };
 
 const Slider = ({ menuItems }) => {
@@ -22,47 +23,53 @@ const Slider = ({ menuItems }) => {
 
   const sliderRef = useRef(null);
   const [selectedCategory, setCategory] = useState(availableCategories[0]);
-  const [visibleImageIndex, setVisibleImageIndex] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
 
   const onMomentumScrollEnd = useCallback(e => {
+    console.log('onMomentumScrollEnd');
     const { contentOffset } = e.nativeEvent;
     const viewSize = e.nativeEvent.layoutMeasurement;
     const pageNum = Math.floor(contentOffset.x / viewSize.width);
-    setVisibleImageIndex(pageNum);
-  }, [visibleImageIndex]);
+    setCurrentPage(pageNum);
+  }, [currentPage]);
 
   const onScroll = e => {
+    console.log('onScroll');
     const { contentOffset } = e.nativeEvent;
     const viewSize = e.nativeEvent.layoutMeasurement;
     const maxWidth = viewSize.width * (menuItems.length - 1);
 
     if (contentOffset.x > maxWidth) {
-      sliderRef.current.scrollToIndex({ index: 0, animated: false });
+      setTimeout(() => {
+        sliderRef.current.scrollToIndex({ index: 0, animated: false });
+        setCurrentPage(0);
+      }, 0)
     }
 
     if (contentOffset.x < 0) {
-      sliderRef.current.scrollToIndex({ index: menuItems.length - 1, animated: false });
+      setTimeout(() => {
+        sliderRef.current.scrollToIndex({ index: menuItems.length - 1, animated: false });
+        setCurrentPage(menuItems.length - 1);
+      }, 0)
     }
   };
 
   useEffect(() => {
-    if (selectedCategory !== menuItems[visibleImageIndex].category) {
-      setCategory(menuItems[visibleImageIndex].category);
+    if (selectedCategory !== menuItems[currentPage].category) {
+      setCategory(menuItems[currentPage].category);
     }
-  }, [menuItems, visibleImageIndex])
+  }, [menuItems, currentPage])
 
-  const handleCategoryChange = nextCategory => {
+  const handleCategoryChange = useCallback(nextCategory => {
     const idx = menuItems.findIndex(({ category }) => category === nextCategory);
     if (idx !== -1) {
       sliderRef.current.scrollToIndex({ index: idx, animated: false, });
-      setVisibleImageIndex(idx);
+      setCurrentPage(idx);
       setCategory(nextCategory);
     }
-  };
+  }, [menuItems]);
 
-  console.log('selectedCategory', selectedCategory);
-
-  const { color } = menuItems[visibleImageIndex];
+  const { color } = menuItems[currentPage];
 
   return (
     <View style={styles.sliderContainer}>
@@ -87,7 +94,7 @@ const Slider = ({ menuItems }) => {
         />
       </View>
       <View style={styles.progressContainer}>
-        <Progress menuItems={menuItems} selectedCategory={selectedCategory} visibleImageIndex={visibleImageIndex} />
+        <Progress menuItems={menuItems} selectedCategory={selectedCategory} currentPage={currentPage} />
       </View>
     </View>
   );

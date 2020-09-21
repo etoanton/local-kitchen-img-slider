@@ -23,42 +23,37 @@ const Slider = ({ menuItems }) => {
 
   const sliderRef = useRef(null);
   const [selectedCategory, setCategory] = useState(availableCategories[0]);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPageNum, setCurrentPage] = useState(0);
 
   const onMomentumScrollEnd = useCallback(e => {
-    console.log('onMomentumScrollEnd');
     const { contentOffset } = e.nativeEvent;
     const viewSize = e.nativeEvent.layoutMeasurement;
     const pageNum = Math.floor(contentOffset.x / viewSize.width);
     setCurrentPage(pageNum);
-  }, [currentPage]);
+  }, [currentPageNum]);
 
-  const onScroll = e => {
-    console.log('onScroll');
-    const { contentOffset } = e.nativeEvent;
-    const viewSize = e.nativeEvent.layoutMeasurement;
-    const maxWidth = viewSize.width * (menuItems.length - 1);
-
-    if (contentOffset.x > maxWidth) {
-      setTimeout(() => {
-        sliderRef.current.scrollToIndex({ index: 0, animated: false });
-        setCurrentPage(0);
-      }, 0)
+  const normalizePageNumber = pageN => {
+    if (pageN === menuItems.length) {
+      return 0;
+    } else if (pageN > menuItems.length) {
+      return 1;
+    } else if (pageN < 0) {
+      return menuItems.length - 1;
     }
-
-    if (contentOffset.x < 0) {
-      setTimeout(() => {
-        sliderRef.current.scrollToIndex({ index: menuItems.length - 1, animated: false });
-        setCurrentPage(menuItems.length - 1);
-      }, 0)
-    }
-  };
+    return pageN;
+  }
 
   useEffect(() => {
-    if (selectedCategory !== menuItems[currentPage].category) {
-      setCategory(menuItems[currentPage].category);
+    const normalizedPageNum = normalizePageNumber(currentPageNum);
+    if (selectedCategory !== menuItems[normalizedPageNum].category) {
+      setCategory(menuItems[normalizedPageNum].category);
     }
-  }, [menuItems, currentPage])
+
+    // support loop
+    if (normalizedPageNum !== currentPageNum) {
+      sliderRef.current.scrollToIndex({ index: normalizedPageNum, animated: false, });
+    }
+  }, [menuItems, currentPageNum, sliderRef])
 
   const handleCategoryChange = useCallback(nextCategory => {
     const idx = menuItems.findIndex(({ category }) => category === nextCategory);
@@ -69,7 +64,9 @@ const Slider = ({ menuItems }) => {
     }
   }, [menuItems]);
 
-  const { color } = menuItems[currentPage];
+  const { color } = menuItems[normalizePageNumber(currentPageNum)];
+
+  const content = menuItems.concat(menuItems.slice(0, 2));
 
   return (
     <View style={styles.sliderContainer}>
@@ -83,18 +80,21 @@ const Slider = ({ menuItems }) => {
       <View style={styles.backgroundContainer} backgroundColor={color} />
       <View style={styles.contentContainer}>
         <FlatList
-          data={menuItems}
+          data={content}
           renderItem={({ item }) => <SlideItem src={item.src} color={item.color} />}
           keyExtractor={item => item.id}
           ref={sliderRef}
           style={styles.imageSliderContainer}
-          onScroll={onScroll}
           onMomentumScrollEnd={onMomentumScrollEnd}
           {...flatListConfig}
         />
       </View>
       <View style={styles.progressContainer}>
-        <Progress menuItems={menuItems} selectedCategory={selectedCategory} currentPage={currentPage} />
+        <Progress
+          menuItems={menuItems}
+          selectedCategory={selectedCategory}
+          currentPage={normalizePageNumber(currentPageNum)}
+        />
       </View>
     </View>
   );
